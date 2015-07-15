@@ -3,42 +3,6 @@
 <head>
   <meta charset="utf-8">
   <script src="http://d3js.org/d3.v3.min.js"></script>
-  <audio id = 'P1'>
-    <source src="0.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'm2'>
-    <source src="1.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'M2'>
-    <source src="2.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'm3'>
-    <source src="3.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'M3'>
-    <source src="4.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'P4'>
-    <source src="5.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'A4'>
-    <source src="6.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'P5'>
-    <source src="7.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'm6'>
-    <source src="8.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'M6'>
-    <source src="9.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'm7'>
-    <source src="10.mp3" type="audio/mp3">
-  </audio>
-  <audio id = 'M7'>
-    <source src="11.mp3" type="audio/mp3">
-  </audio>
   <style>
     @font-face {
       font-family: pixeluxebinary;
@@ -185,13 +149,11 @@
          .on('click', function() {var clicked = d3.select(this)
                                                   .selectAll('rect#black')
                                                   .data()
-                                                  .map(function(d) {return d.key});
-                                  var i = -1;
-                                  setInterval(function() {
-                                    if (i++ < clicked.length-1) {
-                                      var note = document.getElementById(clicked[i]);
-                                      note.play();
-                                    }}, 750);
+                                                  .map(function(d) {return header.indexOf(d.key)})
+                                                  .toString(),
+                                      scale = new Audio('sounds/'+clicked+'.mp3');
+                                  scale.volume = 0.15;
+                                  scale.play();                         
          });
     };
                     
