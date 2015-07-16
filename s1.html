@@ -99,7 +99,7 @@
                             .attr("clip-path","url(#clip)");
 
     function create_selector(selection) {
-          var string = selection.data().map(function(d) {return d.key}).map(function(d) {return '.'+d}).join();
+          var string = selection.data().map(function(d) {return '.'+d.key}).toString();
           return string;};
 
     function plot_rectangles(data) {
@@ -153,7 +153,7 @@
                                                   .toString(),
                                       scale = new Audio('sounds/'+clicked+'.mp3');
                                   scale.volume = 0.15;
-                                  scale.play();                         
+                                  scale.play();
          });
     };
                     
