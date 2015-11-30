@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scale Library</title>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <style>
+    @font-face {
+      font-family: pixeluxebinary;
+      src: url("pixeluxebinary.ttf");
+    }
+    text {
+      font-family: pixeluxebinary;
+      cursor: default;
+      text-anchor: middle;
+      alignment-baseline: middle;
+      shape-rendering: crispEdges;
+    }
+    h1 {
+      font-family: pixeluxebinary;
+      position: relative;
+      image-rendering: crisp-edges;
+      display:inline-block;
+    }
+    svg {
+      margin-left: auto; 
+      margin-right: auto; 
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>2<sup>11</sup> Combinations of a Chromatic Scale</h1>
+
+  <script type="text/javascript">
+    var window_width = window.innerWidth,
+        window_height = window.innerHeight;
+
+    var spread = 0.9;
+
+    var total_width = window_width*spread,
+        height = window_height*0.7;
+
+    var margin = {left: height/12};
+
+    var width = total_width - margin.left;
+
+    var color = d3.scale.ordinal().domain([0,1]).range(['white','black']);
+
+    var svg = d3.select("body")
+                .append("svg")
+                .attr("width", total_width)
+                .attr("height", height);
+                            
+    var header = ['P1','m2','M2','m3','M3','P4','A4','P5','m6','M6','m7','M7'];
+
+    var x = d3.scale.linear().domain([0,2048]).range([0,width]);
+
+    var rect_width = width/2048;
+
+    var rect_height = margin.left;
+
+    var y_rect = d3.scale.linear().domain([-1,11]).range([height,0]);
+
+    var y_lab = d3.scale.ordinal().domain(header).rangePoints([height * 23/24, height/24]);
+
+    d3.select('h1').style('left', window_width*((1-spread)/2) + 'px')
+                   .style('font-size', rect_height/1.6 + 'px')
+                   .style('margin-top', rect_height + 'px')
+                   .style('margin-bottom', rect_height/1.6 + 'px');
+
+    var rowLabels = svg.selectAll('text')
+                       .data(header)
+                       .enter()
+                       .append('text')
+                       .text(function(d) {return d;})
+                       .attr("x", margin.left/2)
+                       .attr("y", function(d) {return y_lab(d);})
+                       .attr('class', function(d) {return d;})
+                       .style('font-size', rect_height/4 + 'px')
+                       .on('mouseover', function() {var label = d3.select(this);
+                                                    if (label.attr('class') !== 'P1') {label.attr('fill', 'rgb(255,0,0)');};})
+                       .on('mouseout', function() {d3.select(this).attr('fill','rgb(0,0,0)');});
+
+    function tester(datum) {
+           for (var i=0; i < this.length; i++) {
+             if(datum[this[i]] !== '1') {
+               return false;}}; 
+           return true;};
+
+    svg.append("defs")
+       .append("clipPath")
+       .attr("id","clip")
+       .append("rect")
+       .attr("width",width)
+       .attr("height",height);
+
+    var rect_container = svg.append('g')
+                            .attr("transform", "translate(" + margin.left + ",0)")
+                            .attr("clip-path","url(#clip)");
+
+    function create_selector(selection) {
+          var string = selection.data().map(function(d) {return '.'+d.key}).toString();
+          return string;};
+
+    function plot_rectangles(data) {
+
+        var zoom = d3.behavior.zoom()
+                              .scaleExtent([1, 25])
+                              .on("zoom", function() {
+                                var s = d3.event.scale;
+                                var x = Math.min(0, Math.max(width * (1 - s), d3.event.translate[0]));
+                                rectangles.attr("transform", "translate(" + x + ",0)scale(" + s + ", 1)");
+                              });
+
+        var rectangles = rect_container.append('g').attr('class','rectangles').call(zoom);
+
+        rectangles.selectAll('g')
+           .data(data)
+           .enter()
+           .append('g')
+           .selectAll('rect')
+           .data(function(d) {return d3.entries(d)})
+           .enter()
+           .append('rect')
+           .attr("x", function(d,i,j) {return x(j)})
+           .attr("y", function(d,i) {return y_rect(i)})
+           .attr("width", rect_width)
+           .attr("height", rect_height)
+           .attr("fill", function(d) {return color(d['value'])})
+           .attr('id', function(d) {return color(d['value'])});
+
+        rectangles.selectAll('g')
+         .on('mouseover', function() {d3.select(this)
+                                        .selectAll('rect')
+                                        .attr('fill','rgb(255,0,0)');
+                                      var whites = d3.select(this)
+                                        .selectAll('rect#white');
+                                      d3.selectAll(create_selector(whites)).attr('fill','rgb(255,255,255)');                                                     
+         })
+         .on('mouseout', function() {d3.select(this)
+                                       .selectAll('rect#black')
+                                       .attr('fill','rgb(0,0,0)');
+                                     var whites = d3.select(this)
+                                       .selectAll('rect#white')
+                                       .attr('fill','rgb(255,255,255)');
+                                     d3.selectAll(create_selector(whites)).attr('fill','rgb(0,0,0)');
+                                     
+         })
+         .on('click', function() {var clicked = d3.select(this)
+                                                  .selectAll('rect#black')
+                                                  .data()
+                                                  .map(function(d) {return header.indexOf(d.key)})
+                                                  .toString(),
+                                      scale = new Audio('sounds/'+clicked+'.mp3');
+                                  scale.volume = 0.15;
+                                  scale.play();
+         });
+    };
+                    
+    d3.csv("scales.csv", function(data) {
+      plot_rectangles(data);
+      rowLabels.on("click", function() {var label = d3.select(this);
+                                         if (label.attr('id') !== 'on') {label.attr('id','on');} else {label.attr('id','off');};
+                                         var include = d3.selectAll('#on').data();
+                                         var filtered = data.filter(tester,include);
+                                         d3.select('.rectangles').remove();
+                                         plot_rectangles(filtered);
+                                       });                                                      
+    });
+  </script>
+</body>
+</html>
