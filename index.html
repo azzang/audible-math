@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Scale Library</title>
+  <link rel="shortcut icon" href="images/favicon.ico">
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <style>
     @font-face {
@@ -23,8 +24,8 @@
       display:inline-block;
     }
     svg {
-      margin-left: auto; 
-      margin-right: auto; 
+      margin-left: auto;
+      margin-right: auto;
       display: block;
     }
   </style>
@@ -51,7 +52,7 @@
                 .append("svg")
                 .attr("width", total_width)
                 .attr("height", height);
-                            
+
     var header = ['P1','m2','M2','m3','M3','P4','A4','P5','m6','M6','m7','M7'];
 
     var x = d3.scale.linear().domain([0,2048]).range([0,width]);
@@ -85,7 +86,7 @@
     function tester(datum) {
            for (var i=0; i < this.length; i++) {
              if(datum[this[i]] !== '1') {
-               return false;}}; 
+               return false;}};
            return true;};
 
     svg.append("defs")
@@ -136,7 +137,7 @@
                                         .attr('fill','rgb(255,0,0)');
                                       var whites = d3.select(this)
                                         .selectAll('rect#white');
-                                      d3.selectAll(create_selector(whites)).attr('fill','rgb(255,255,255)');                                                     
+                                      d3.selectAll(create_selector(whites)).attr('fill','rgb(255,255,255)');
          })
          .on('mouseout', function() {d3.select(this)
                                        .selectAll('rect#black')
@@ -145,7 +146,7 @@
                                        .selectAll('rect#white')
                                        .attr('fill','rgb(255,255,255)');
                                      d3.selectAll(create_selector(whites)).attr('fill','rgb(0,0,0)');
-                                     
+
          })
          .on('click', function() {var clicked = d3.select(this)
                                                   .selectAll('rect#black')
@@ -157,7 +158,7 @@
                                   scale.play();
          });
     };
-                    
+
     d3.csv("scales.csv", function(data) {
       plot_rectangles(data);
       rowLabels.on("click", function() {var label = d3.select(this);
@@ -166,7 +167,7 @@
                                          var filtered = data.filter(tester,include);
                                          d3.select('.rectangles').remove();
                                          plot_rectangles(filtered);
-                                       });                                                      
+                                       });
     });
   </script>
 </body>
