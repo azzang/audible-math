@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Scale Library</title>
+  <title>"An Improviser's OS" by Wayne Krantz, visualized</title>
   <link rel="shortcut icon" href="favicon.ico">
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <style>
@@ -32,143 +32,161 @@
 </head>
 <body>
   <h1>2<sup>11</sup> Combinations of a Chromatic Scale</h1>
+  <script>
 
-  <script type="text/javascript">
-    var window_width = window.innerWidth,
-        window_height = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    const spread = 0.9;
+    const totalWidth = windowWidth * spread;
+    const height = window.innerHeight * 0.7;
+    const marginLeft = height / 12;
+    const width = totalWidth - marginLeft;
+    const color = (bit) => (bit == '0') ? 'white' : 'black';
+    const svg = d3.select('body')
+      .append('svg')
+      .attr('width', totalWidth)
+      .attr('height', height);
+    const header = 'P1,m2,M2,m3,M3,P4,A4,P5,m6,M6,m7,M7'.split(',');
+    const x = d3.scale.linear().domain([0, 2048]).range([0, width]);
+    const rectWidth = width / 2048;
+    const rectHeight = marginLeft;
+    const yRect = d3.scale.linear().domain([-1, 11]).range([height, 0]);
+    const yLab = d3.scale.ordinal().domain(header)
+      .rangePoints([height * 23 / 24, height / 24]);
+    const data = [];
+    const audioContext = new AudioContext();
 
-    var spread = 0.9;
+    d3.select('h1').style('left', windowWidth * (1 - spread) / 2 + 'px')
+      .style('font-size', rectHeight / 1.6 + 'px')
+      .style('margin-top', rectHeight + 'px')
+      .style('margin-bottom', rectHeight / 1.6 + 'px');
 
-    var total_width = window_width*spread,
-        height = window_height*0.7;
+    svg.selectAll('text')
+      .data(header)
+      .enter()
+      .append('text')
+      .text(d => d)
+      .attr('x', marginLeft / 2)
+      .attr('y', d => yLab(d))
+      .attr('id', d => d)
+      .style('font-size', rectHeight / 4 + 'px')
+      .on('mouseover', function () {
+        const label = d3.select(this);
+        if (label.data() != 'P1') label.attr('fill', 'magenta');
+      })
+      .on('mouseout', function () {d3.select(this).attr('fill', 'black');})
+      .on('click', function () {
+        const label = d3.select(this);
+        if (label.data() != 'P1') {
+          label.attr('class', (label.attr('class') != 'on') ? 'on' : 'off');
+          const include = d3.selectAll('.on')
+            .data()
+            .map(d => 1 << 11 - header.indexOf(d))
+            .reduce((d1, d2) => d1 + d2, 0);
+          d3.select('.rectangles').remove();
+          plotRectangles(data.filter(d => (d & include) == include));
+        }
+      });
 
-    var margin = {left: height/12};
+    svg.append('defs')
+      .append('clipPath')
+      .attr('id', 'clip')
+      .append('rect')
+      .attr('width', width)
+      .attr('height', height);
 
-    var width = total_width - margin.left;
+    (function createData (scale, mask, length, indices) {
+      if (mask == 0) return (data[indices[length]++] = scale);
+      createData(scale | mask, mask >> 1, length + 1, indices);
+      createData(scale & ~mask, mask >> 1, length, indices);
+    })(2048, 1024, 1, {'1':0, '2':1, '3':12, '4':67, '5':232, '6':562,
+      '7':1024, '8':1486, '9':1816, '10':1981, '11':2036, '12':2047});
 
-    var color = d3.scale.ordinal().domain([0,1]).range(['white','black']);
+    const rectContainer = svg.append('g')
+      .attr('transform', 'translate(' + marginLeft  + ', 0)')
+      .attr('clip-path', 'url(#clip)');
 
-    var svg = d3.select("body")
-                .append("svg")
-                .attr("width", total_width)
-                .attr("height", height);
+    function plotRectangles(data) {
+      const rectangles = rectContainer.append('g').attr('class', 'rectangles');
+      rectangles.selectAll('g')
+        .data(data)
+        .enter()
+        .append('g')
+        .selectAll('rect')
+        .data(d => (d).toString(2))
+        .enter()
+        .append('rect')
+        .attr('x', (d, i, j) => x(j))
+        .attr('y', (d, i) => yRect(i))
+        .attr('width', rectWidth)
+        .attr('height', rectHeight)
+        .attr('fill', d => color(d));
+      const zoom = d3.behavior.zoom()
+        .scaleExtent([1, 25])
+        .on('zoom', function () {
+          const s = d3.event.scale;
+          const x = Math.min(0, Math.max(width * (1 - s), d3.event.translate[0]));
+          rectangles.attr('transform', 'translate(' + x + ', 0) scale(' + s + ', 1)');
+        });
+      rectangles.call(zoom);
+      rectangles.selectAll('g')
+        .on('mouseover', function () {
+          const rectangles = d3.select(this).selectAll('rect');
+          rectangles.attr('fill', 'magenta');
+          d3.selectAll(getZeroSelector(rectangles.data())).attr('fill', 'white');
+        })
+        .on('mouseout', function () {
+          const rectangles = d3.select(this).selectAll('rect');
+          rectangles.attr('fill', d => color(d));
+          d3.selectAll(getZeroSelector(rectangles.data())).attr('fill', 'black');
+        })
+        .on('click', function () {
+          playScale(d3.select(this).selectAll('rect').data());
+        });
+    }
 
-    var header = ['P1','m2','M2','m3','M3','P4','A4','P5','m6','M6','m7','M7'];
+    plotRectangles(data);
 
-    var x = d3.scale.linear().domain([0,2048]).range([0,width]);
+    function getZeroSelector(scale) {
+      return '#' + header.filter((d, i) => scale[i] == '0').join(', #');
+    }
 
-    var rect_width = width/2048;
+    function playNote(delay, interval, duration) {
+      const gainNode = audioContext.createGain();
+      gainNode.connect(audioContext.destination);
+      gainNode.gain.value = 0.08;
+      const oscillator = audioContext.createOscillator();
+      oscillator.connect(gainNode);
+      oscillator.type = 'square';
+      oscillator.frequency.value = 110;
+      oscillator.detune.value = 100 * interval;
+      const startTime = audioContext.currentTime + delay;
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    }
 
-    var rect_height = margin.left;
-
-    var y_rect = d3.scale.linear().domain([-1,11]).range([height,0]);
-
-    var y_lab = d3.scale.ordinal().domain(header).rangePoints([height * 23/24, height/24]);
-
-    d3.select('h1').style('left', window_width*((1-spread)/2) + 'px')
-                   .style('font-size', rect_height/1.6 + 'px')
-                   .style('margin-top', rect_height + 'px')
-                   .style('margin-bottom', rect_height/1.6 + 'px');
-
-    var rowLabels = svg.selectAll('text')
-                       .data(header)
-                       .enter()
-                       .append('text')
-                       .text(function(d) {return d;})
-                       .attr("x", margin.left/2)
-                       .attr("y", function(d) {return y_lab(d);})
-                       .attr('class', function(d) {return d;})
-                       .style('font-size', rect_height/4 + 'px')
-                       .on('mouseover', function() {var label = d3.select(this);
-                                                    if (label.attr('class') !== 'P1') {label.attr('fill', 'rgb(255,0,0)');};})
-                       .on('mouseout', function() {d3.select(this).attr('fill','rgb(0,0,0)');});
-
-    function tester(datum) {
-           for (var i=0; i < this.length; i++) {
-             if(datum[this[i]] !== '1') {
-               return false;}};
-           return true;};
-
-    svg.append("defs")
-       .append("clipPath")
-       .attr("id","clip")
-       .append("rect")
-       .attr("width",width)
-       .attr("height",height);
-
-    var rect_container = svg.append('g')
-                            .attr("transform", "translate(" + margin.left + ",0)")
-                            .attr("clip-path","url(#clip)");
-
-    function create_selector(selection) {
-          var string = selection.data().map(function(d) {return '.'+d.key}).toString();
-          return string;};
-
-    function plot_rectangles(data) {
-
-        var zoom = d3.behavior.zoom()
-                              .scaleExtent([1, 25])
-                              .on("zoom", function() {
-                                var s = d3.event.scale;
-                                var x = Math.min(0, Math.max(width * (1 - s), d3.event.translate[0]));
-                                rectangles.attr("transform", "translate(" + x + ",0)scale(" + s + ", 1)");
-                              });
-
-        var rectangles = rect_container.append('g').attr('class','rectangles').call(zoom);
-
-        rectangles.selectAll('g')
-           .data(data)
-           .enter()
-           .append('g')
-           .selectAll('rect')
-           .data(function(d) {return d3.entries(d)})
-           .enter()
-           .append('rect')
-           .attr("x", function(d,i,j) {return x(j)})
-           .attr("y", function(d,i) {return y_rect(i)})
-           .attr("width", rect_width)
-           .attr("height", rect_height)
-           .attr("fill", function(d) {return color(d['value'])})
-           .attr('id', function(d) {return color(d['value'])});
-
-        rectangles.selectAll('g')
-         .on('mouseover', function() {d3.select(this)
-                                        .selectAll('rect')
-                                        .attr('fill','rgb(255,0,0)');
-                                      var whites = d3.select(this)
-                                        .selectAll('rect#white');
-                                      d3.selectAll(create_selector(whites)).attr('fill','rgb(255,255,255)');
-         })
-         .on('mouseout', function() {d3.select(this)
-                                       .selectAll('rect#black')
-                                       .attr('fill','rgb(0,0,0)');
-                                     var whites = d3.select(this)
-                                       .selectAll('rect#white')
-                                       .attr('fill','rgb(255,255,255)');
-                                     d3.selectAll(create_selector(whites)).attr('fill','rgb(0,0,0)');
-
-         })
-         .on('click', function() {var clicked = d3.select(this)
-                                                  .selectAll('rect#black')
-                                                  .data()
-                                                  .map(function(d) {return header.indexOf(d.key)})
-                                                  .toString(),
-                                      scale = new Audio('sounds/'+clicked+'.mp3');
-                                  scale.volume = 0.15;
-                                  scale.play();
-         });
-    };
-
-    d3.csv("scales.csv", function(data) {
-      plot_rectangles(data);
-      rowLabels.on("click", function() {var label = d3.select(this);
-                                         if (label.attr('id') !== 'on') {label.attr('id','on');} else {label.attr('id','off');};
-                                         var include = d3.selectAll('#on').data();
-                                         var filtered = data.filter(tester,include);
-                                         d3.select('.rectangles').remove();
-                                         plot_rectangles(filtered);
-                                       });
-    });
+    function playScale(scale) {
+      const shuffled = [0];
+      for (let i = 1; i < 12; i++) {
+        if (scale[i] == '1') {
+          shuffled.push(i);
+        }
+      }
+      let delay = 0;
+      let currentIndex = shuffled.length;
+      let randomIndex;
+      let temp;
+      let duration;
+      while (currentIndex > 0) {
+        randomIndex = Math.random() * currentIndex | 0;
+        duration = (Math.random() < 2 / 3) ? 0.18 : 0.36;
+        playNote(delay, shuffled[randomIndex], duration);
+        delay += duration;
+        currentIndex--;
+        temp = shuffled[currentIndex];
+        shuffled[currentIndex] = shuffled[randomIndex];
+        shuffled[randomIndex] = temp;
+      }
+    }
   </script>
 </body>
 </html>
