@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>"An Improviser's OS" by Wayne Krantz, visualized</title>
+  <link rel="shortcut icon" href="favicon.ico">
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <style>
     @font-face {
@@ -143,7 +144,7 @@
       const scale = d3.select(this).selectAll('rect').data();
       const missingIntervalSelector = intervals
         .filter((interval, i) => scale[i] == '0')
-        .map(interval => '#' + interval).join();
+        .map(interval => `#${interval}`).join();
       d3.selectAll(missingIntervalSelector)
         .attr('fill', d3.event.type == 'mouseover' ? 'white' : 'black');
     }
