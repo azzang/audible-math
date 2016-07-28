@@ -17,7 +17,7 @@
       alignment-baseline: middle;
       shape-rendering: crispEdges;
     }
-    text:not(#P1):hover, .scales g:hover rect {
+    text:not(#P1):hover, #scales g:hover rect {
       fill: magenta;
     }
     h1 {
@@ -98,7 +98,7 @@
 
     function plotScales(scales) {
       scaleContainer.append('g')
-        .attr('class', 'scales')
+        .attr('id', 'scales')
         .call(d3.behavior.zoom()
           .scaleExtent([1, 25])
           .on('zoom', zoom))
@@ -128,7 +128,7 @@
           .data()
           .map(interval => 1 << 11 - intervals.indexOf(interval))
           .reduce((last, current) =>  last + current, 0);
-        d3.select('.scales').remove();
+        d3.select('#scales').remove();
         plotScales(scales.filter(scale => (scale & include) == include));
       }
     }
