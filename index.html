@@ -49,7 +49,7 @@
       .rangePoints([heightSVG * 23 / 24, heightSVG / 24]);
 
     const marginLeft = heightSVG / 12;
-    const clipContainer = svg.append('g')
+    const scaleContainer = svg.append('g')
       .attr('transform', `translate(${marginLeft}, 0)`)
       .attr('clip-path', 'url(#clip)');
 
@@ -97,12 +97,18 @@
     plotScales(scales);
 
     function plotScales(scales) {
-      const scaleContainer = clipContainer.append('g')
-        .attr('class', 'scales');
-      scaleContainer.selectAll('g')
+      scaleContainer.append('g')
+        .attr('class', 'scales')
+        .call(d3.behavior.zoom()
+          .scaleExtent([1, 25])
+          .on('zoom', zoom))
+        .selectAll('g')
         .data(scales)
         .enter()
         .append('g')
+        .on('mouseover', toggleMissingIntervals)
+        .on('mouseout', toggleMissingIntervals)
+        .on('click', playScale)
         .selectAll('rect')
         .data(scale => (scale).toString(2))
         .enter()
@@ -112,13 +118,6 @@
         .attr('width', noteWidth)
         .attr('height', marginLeft)
         .attr('fill', note => note == '0' ? 'white' : 'black');
-      scaleContainer.call(d3.behavior.zoom()
-        .scaleExtent([1, 25])
-        .on('zoom', zoom));
-      scaleContainer.selectAll('g')
-        .on('mouseover', toggleMissingIntervals)
-        .on('mouseout', toggleMissingIntervals)
-        .on('click', playScale);
     }
 
     function filterScales() {
