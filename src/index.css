@@ -1,0 +1,32 @@
+@font-face {
+  font-family: pixeluxebinary;
+  src: url("./pixeluxebinary.ttf");
+}
+
+body {
+  font-family: pixeluxebinary;
+  margin: 0;
+}
+
+text {
+  alignment-baseline: middle;
+  cursor: default;
+  shape-rendering: crispEdges;
+  text-anchor: middle;
+}
+
+text:not(#P1):hover,
+#scales g:hover rect {
+  fill: magenta;
+}
+
+h1 {
+  display: inline-block;
+  image-rendering: crisp-edges;
+  position: relative;
+}
+
+svg {
+  display: block;
+  margin: 0 auto;
+}
